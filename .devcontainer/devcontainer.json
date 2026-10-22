@@ -1,28 +1,13 @@
-{
-  // STAGE environment: open the repo in GitHub Codespaces.
-  // The whole app starts automatically with Docker Compose.
-  "name": "TrialWise (Stage)",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.13" },
-    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
-  },
-  "postCreateCommand": "cp -n .env.example .env || true; pip install --user uv",
-  "postStartCommand": "APP_ENV=stage docker compose up -d --build",
-  "forwardPorts": [5173, 8000],
-  "portsAttributes": {
-    "5173": { "label": "Frontend", "onAutoForward": "openBrowser" },
-    "8000": { "label": "API (docs at /docs)" }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-python.python",
-        "charliermarsh.ruff",
-        "ms-azuretools.vscode-docker",
-        "dbaeumer.vscode-eslint"
-      ]
-    }
-  }
-}
+   {
+     // STAGE environment: open the repo in GitHub Codespaces.
+     // "universal" = GitHub's default image. It already has Docker, Python and Node.
+     "name": "TrialWise (Stage)",
+     "image": "mcr.microsoft.com/devcontainers/universal:2",
+     "postCreateCommand": "cp -n .env.example .env || true",
+     "postStartCommand": "APP_ENV=stage docker compose up -d --build",
+     "forwardPorts": [5173, 8000],
+     "portsAttributes": {
+       "5173": { "label": "Frontend" },
+       "8000": { "label": "API (docs at /docs)" }
+     }
+   }
