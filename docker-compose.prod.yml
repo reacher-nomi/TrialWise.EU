@@ -1,0 +1,40 @@
+# LIVE environment (Azure VM):  docker compose -f docker-compose.prod.yml up -d --build
+# Everything is served on port 80. Only nginx is exposed to the internet.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}   # required in Live
+      POSTGRES_DB: trialwise
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d trialwise"]
+      interval: 5s
+      retries: 10
+    # no "ports:" -> the database is NOT reachable from the internet
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: live
+      DATABASE_URL: postgresql+psycopg://app:${DB_PASSWORD}@db:5432/trialwise
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

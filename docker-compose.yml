@@ -1,0 +1,47 @@
+# DEV environment:  docker compose up --build
+# Frontend: http://localhost:5173   API docs: http://localhost:8000/docs
+services:
+  db:
+    image: postgres:17-alpine          # pinned: Postgres 18 changed its data path
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-app}   # from .env (default "app" for local dev)
+      POSTGRES_DB: trialwise
+    volumes:
+      - db_data:/var/lib/postgresql/data       # data survives restarts
+    ports:
+      - "5432:5432"                            # lets you open the DB with a GUI tool
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d trialwise"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    command: ["fastapi", "dev", "app/main.py", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      DATABASE_URL: postgresql+psycopg://app:${DB_PASSWORD:-app}@db:5432/trialwise
+    volumes:
+      - ./backend/app:/app/app                 # edit code on your laptop -> auto reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy             # wait until Postgres is really ready
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    environment:
+      VITE_API_TARGET: http://backend:8000     # containers talk by service name
+    volumes:
+      - ./frontend/src:/app/src                # hot reload for React code
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
